@@ -107,7 +107,11 @@ func (client *GatewayClient) executeGraphQLTransaction(ctx context.Context, quer
 	}
 
 	if len(rawEnvelope.Errors) > 0 {
-		return fmt.Errorf("%w: %s", ErrGatewayFailure, rawEnvelope.Errors[0].Message)
+		errorString := rawEnvelope.Errors[0].Message
+		if strings.Contains(strings.ToLower(errorString), "does not exist") || strings.Contains(strings.ToLower(errorString), "not found") {
+			return ErrResourceNotFound
+		}
+		return fmt.Errorf("%w: %s", ErrGatewayFailure, errorString)
 	}
 
 	if unmarshalError := json.Unmarshal(rawEnvelope.Data, destinationPointer); unmarshalError != nil {
